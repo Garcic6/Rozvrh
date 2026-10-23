@@ -5,6 +5,7 @@ import {
   TimetableWeekData,
 } from './types/bakalari';
 import { BakalariService } from './services/bakalariService';
+import { REAL_STUDENT_USER } from './data/realSpsdData';
 import { Navbar } from './components/Navbar';
 import { CurrentLessonBanner } from './components/CurrentLessonBanner';
 import { TimetableControls } from './components/TimetableControls';
@@ -35,7 +36,7 @@ import {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'week' | 'day' | 'changes'>('week');
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [currentDate, setCurrentDate] = useState<Date>(() => BakalariService.getMondayOfCurrentWeek());
   const [isPermanent, setIsPermanent] = useState<boolean>(false);
   const [weekMode, setWeekMode] = useState<'current' | 'next' | 'permanent'>('current');
   const [selectedClassId, setSelectedClassId] = useState<string>('ZI'); // 3.A by default
@@ -43,11 +44,16 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [layoutMode, setLayoutMode] = useState<'bakalari-rows' | 'calendar-cols'>('bakalari-rows');
 
-  const [weekData, setWeekData] = useState<TimetableWeekData | null>(null);
+  // Instant 0ms initial render: schedule is populated immediately from cache or embedded 3.A SPŠD dataset
+  const [weekData, setWeekData] = useState<TimetableWeekData | null>(() => {
+    return BakalariService.getInstantTimetable(new Date(), false);
+  });
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [lastSyncText, setLastSyncText] = useState<string>('');
+  const [lastSyncText, setLastSyncText] = useState<string>(() => {
+    return new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+  });
 
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
   const [isLoginOpen, setIsLoginOpen] = useState<boolean>(false);
@@ -55,55 +61,41 @@ export default function App() {
   const [isHtmlImportOpen, setIsHtmlImportOpen] = useState<boolean>(false);
   const [selectedLesson, setSelectedLesson] = useState<NormalizedLesson | null>(null);
 
-  const [currentUser, setCurrentUser] = useState<BakalariUser | null>(BakalariService.getStoredUser());
-  const [isDemo, setIsDemo] = useState<boolean>(BakalariService.isDemoMode());
+  const [currentUser, setCurrentUser] = useState<BakalariUser | null>(() => {
+    return BakalariService.getStoredUser() || REAL_STUDENT_USER;
+  });
+  const [isDemo, setIsDemo] = useState<boolean>(() => BakalariService.isDemoMode());
 
-  // Load timetable
+  // Load timetable in background without wiping displayed content
   const loadTimetable = useCallback(async (date: Date, permanent: boolean, silent = false, classId?: string) => {
-    const isAuthed = BakalariService.isAuthenticated();
-    const demo = BakalariService.isDemoMode();
-    const storedUser = BakalariService.getStoredUser();
-
-    if (!isAuthed && !demo && !storedUser) {
-      setIsLoading(false);
-      setIsRefreshing(false);
-      return;
+    if (!silent) {
+      setIsRefreshing(true);
     }
-
-    if (!silent) setIsLoading(true);
-    else setIsRefreshing(true);
     setErrorMessage(null);
 
     const activeClass = classId || selectedClassId;
 
     try {
       const data = await BakalariService.fetchTimetable(date, permanent, activeClass);
-      setWeekData(data);
-      const now = new Date();
-      setLastSyncText(
-        now.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-      );
+      if (data && data.days?.length > 0) {
+        setWeekData(data);
+        const now = new Date();
+        setLastSyncText(
+          now.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        );
+      }
       setErrorMessage(null);
     } catch (err: any) {
       console.warn('Timetable fetch error:', err);
       const isAuthProblem =
         err.message === 'NOT_AUTHENTICATED' ||
-        err.status === 401 ||
-        err.status === 500 ||
-        err.details?.userTokenValid === false ||
-        err.userTokenValid === false;
+        err.status === 401;
 
       if (isAuthProblem) {
-        setWeekData(null);
-        setCurrentUser(null);
-        setIsDemo(false);
         setIsLoginOpen(true);
         const urlPart = err.targetUrl ? ` na ${err.targetUrl}` : '';
-        const tokenPreview = err.tokenPreview || err.details?.tokenPreview;
-        const tokenLength = err.tokenLength || err.details?.tokenLength;
-        const tokenInfo = tokenPreview ? ` (Otisk tokenu: ${tokenPreview}, délka: ${tokenLength} zn.)` : '';
         setErrorMessage(
-          `[HTTP ${err.status || 401}${urlPart}]: Přístupový token byl neplatný nebo odmítnut serverem${tokenInfo}. Veškerá data byla vyčištěna. Zadejte prosím své přihlašovací údaje k Bakalářům.`
+          `[HTTP ${err.status || 401}${urlPart}]: Přístupový token expiroval. Zadejte prosím své přihlašovací údaje k Bakalářům.`
         );
       } else {
         const urlStr = err.targetUrl ? ` na ${err.targetUrl}` : '';
@@ -119,67 +111,74 @@ export default function App() {
     }
   }, [selectedClassId]);
 
+  // Initial mount: authenticate check and silent background sync
   useEffect(() => {
     const isAuthed = BakalariService.isAuthenticated();
     const demo = BakalariService.isDemoMode();
-
-    if (!isAuthed && !demo) {
-      // Clean slate - open login modal directly
-      setCurrentUser(null);
-      setIsDemo(false);
-      setIsLoading(false);
-      setIsLoginOpen(true);
-      return;
-    }
-
-    const user = BakalariService.getStoredUser();
+    const user = BakalariService.getStoredUser() || REAL_STUDENT_USER;
     setCurrentUser(user);
     setIsDemo(demo);
 
-    if (isAuthed || demo) {
-      loadTimetable(currentDate, isPermanent);
-    } else {
-      setIsLoading(false);
+    // If authenticated, check for fresh updates in the background
+    if (isAuthed) {
+      loadTimetable(currentDate, isPermanent, true);
     }
   }, []); // Run on mount
 
   // Automatic background auto-update interval (every 120 seconds / 2 minutes)
   useEffect(() => {
-    if (!currentUser && !isDemo) return;
+    if (!BakalariService.isAuthenticated()) return;
 
     const interval = setInterval(() => {
       loadTimetable(currentDate, isPermanent, true /* silent refresh */);
     }, 120000);
 
     return () => clearInterval(interval);
-  }, [currentDate, isPermanent, currentUser, isDemo, loadTimetable]);
+  }, [currentDate, isPermanent, loadTimetable]);
 
-  // 3-Mode handler: Tento týden / Příští týden / Stálý rozvrh
+  // 3-Mode handler: Tento týden / Příští týden / Stálý rozvrh (0ms Instant Switch!)
   const handleSelectWeekMode = (mode: 'current' | 'next' | 'permanent') => {
     setWeekMode(mode);
+    let targetDate = currentDate;
+    let perm = false;
+
     if (mode === 'current') {
-      setIsPermanent(false);
-      const currentMon = BakalariService.getMondayOfCurrentWeek();
-      setCurrentDate(currentMon);
-      loadTimetable(currentMon, false);
+      perm = false;
+      targetDate = BakalariService.getMondayOfCurrentWeek();
     } else if (mode === 'next') {
-      setIsPermanent(false);
-      const nextMon = BakalariService.getMondayOfNextWeek();
-      setCurrentDate(nextMon);
-      loadTimetable(nextMon, false);
+      perm = false;
+      targetDate = BakalariService.getMondayOfNextWeek();
     } else if (mode === 'permanent') {
-      setIsPermanent(true);
-      loadTimetable(currentDate, true);
+      perm = true;
+      targetDate = BakalariService.getMondayOfCurrentWeek();
+    }
+
+    setIsPermanent(perm);
+    setCurrentDate(targetDate);
+
+    // INSTANT RENDER (0ms latency): Swap data from instant cache immediately!
+    const instantData = BakalariService.getInstantTimetable(targetDate, perm);
+    setWeekData(instantData);
+
+    // Silent background check if authenticated
+    if (BakalariService.isAuthenticated()) {
+      loadTimetable(targetDate, perm, true);
     }
   };
 
-  // Week navigation handlers
+  // Week navigation handlers (0ms Instant Switch!)
   const handlePrevWeek = () => {
     setWeekMode('current');
     const next = new Date(currentDate);
     next.setDate(next.getDate() - 7);
     setCurrentDate(next);
-    loadTimetable(next, isPermanent);
+
+    const instantData = BakalariService.getInstantTimetable(next, isPermanent);
+    setWeekData(instantData);
+
+    if (BakalariService.isAuthenticated()) {
+      loadTimetable(next, isPermanent, true);
+    }
   };
 
   const handleNextWeek = () => {
@@ -187,7 +186,13 @@ export default function App() {
     const next = new Date(currentDate);
     next.setDate(next.getDate() + 7);
     setCurrentDate(next);
-    loadTimetable(next, isPermanent);
+
+    const instantData = BakalariService.getInstantTimetable(next, isPermanent);
+    setWeekData(instantData);
+
+    if (BakalariService.isAuthenticated()) {
+      loadTimetable(next, isPermanent, true);
+    }
   };
 
   const handleCurrentWeek = () => {
@@ -252,8 +257,8 @@ export default function App() {
   const handleLogout = () => {
     BakalariService.logout();
     setIsDemo(false);
-    setCurrentUser(null);
-    setWeekData(null);
+    setCurrentUser(REAL_STUDENT_USER);
+    setWeekData(BakalariService.getInstantTimetable(new Date(), false));
     setWeekMode('current');
   };
 

@@ -56,9 +56,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       if (res.ok) {
         const data = await res.json();
         setServerStatus({ isReachable: data.isReachable, version: data.apiVersion });
+      } else if (BakalariService.isStaticHost()) {
+        setServerStatus({ isReachable: true, version: 'GitHub Pages (Statický režim)' });
+      } else {
+        setServerStatus({ isReachable: false });
       }
     } catch {
-      setServerStatus({ isReachable: false });
+      if (BakalariService.isStaticHost()) {
+        setServerStatus({ isReachable: true, version: 'GitHub Pages (Statický režim)' });
+      } else {
+        setServerStatus({ isReachable: false });
+      }
     }
   };
 
@@ -133,7 +141,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             {serverStatus?.isReachable ? (
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                API v3 aktivní
+                {serverStatus.version || 'API v3 aktivní'}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">

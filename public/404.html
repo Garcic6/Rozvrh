@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Přesměrování... - Rozvrh SPŠD Motol</title>
+    <script>
+      // Single Page Application redirect for GitHub Pages
+      // Redirects any 404 subpath back to index.html with preservation of state
+      sessionStorage.redirect = location.href;
+      location.replace(location.pathname.split('/').slice(0, 2).join('/') + '/');
+    </script>
+  </head>
+  <body>
+    <p style="font-family: sans-serif; text-align: center; margin-top: 50px;">
+      Načítání rozvrhu SPŠD Motol... <a href="./">Klikněte zde</a> pokud nejste přesměrováni.
+    </p>
+  </body>
+</html>
