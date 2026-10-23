@@ -1,0 +1,286 @@
+<!-- Copy of standalone rozvrh.html accessible at /rozvrh.html -->
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rozvrh hodin - SPŠD Motol (Samostatné jedno HTML)</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --subst-bg: #fffbeb;
+      --subst-border: #fcd34d;
+      --cancel-bg: #fef2f2;
+      --cancel-border: #fca5a5;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text-main); min-height: 100vh; padding-bottom: 50px; }
+    header { background: #fff; border-bottom: 1px solid var(--border); padding: 14px 24px; position: sticky; top: 0; z-index: 30; }
+    .header-inner { max-width: 1350px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.15rem; color: var(--text-main); text-decoration: none; }
+    .brand-badge { background: var(--primary); color: #fff; width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--text-main); text-decoration: none; }
+    .btn:hover { background: #f1f5f9; }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); }
+    main { max-width: 1350px; margin: 20px auto; padding: 0 16px; }
+    .banner { background: #0f172a; color: #fff; border-radius: 14px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .login-box { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 24px; }
+    .login-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+    .input-field { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; background: #f8fafc; outline: none; }
+    .table-container { background: #fff; border: 1px solid var(--border); border-radius: 14px; overflow-x: auto; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    th, td { border: 1px solid #f1f5f9; padding: 8px; vertical-align: top; }
+    th { background: #f8fafc; font-size: 12px; font-weight: 600; color: #475569; text-align: center; }
+    th.day-th { text-align: left; width: 130px; padding-left: 14px; }
+    td.day-td { background: #fff; font-weight: 700; font-size: 13px; padding-left: 14px; border-right: 2px solid var(--border); }
+    .lesson-card { border-radius: 8px; padding: 8px; border: 1px solid var(--border); font-size: 12px; cursor: pointer; margin-bottom: 6px; background: #f8fafc; }
+    .badge-subst { background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+    .badge-cancel { background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .panel { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a href="#" class="brand">
+        <div class="brand-badge">M</div>
+        <span>SPŠD Motol · Rozvrh hodin (Jedno HTML)</span>
+      </a>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-primary" onclick="downloadIcs()">📅 Stáhnout kalendář (.ics)</button>
+        <button class="btn" onclick="saveThisHtml()">💾 Stáhnout toto HTML</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="banner">
+      <div>
+        <h2 style="font-size: 16px; font-weight: 700;">Rozvrh hodin SPŠD Motol</h2>
+        <p style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Kompletní aplikace v jednom samostatném HTML souboru</p>
+      </div>
+      <button class="btn btn-primary" onclick="downloadIcs()">Export do Google Kalendáře</button>
+    </div>
+
+    <!-- Login -->
+    <div class="login-box">
+      <h3 style="font-size: 14px; font-weight: 700;">🔑 Přihlášení k účtu na mot-spsd.bakalari.cz/Timetable</h3>
+      <p style="font-size: 12px; color: #64748b; margin-top: 4px;">
+        Zadejte své přihlašovací jméno a heslo pro stažení skutečného rozvrhu ze školy:
+      </p>
+      <form onsubmit="handleLogin(event)" class="login-grid">
+        <input type="text" id="username" class="input-field" placeholder="Uživatelské jméno" required />
+        <input type="password" id="password" class="input-field" placeholder="Heslo" required />
+        <button type="submit" class="btn btn-primary" style="justify-content: center;">Přihlásit a načíst</button>
+      </form>
+      <div id="status" style="font-size: 12px; margin-top: 8px;"></div>
+    </div>
+
+    <!-- Timetable Table -->
+    <div class="table-container">
+      <table id="timetable"></table>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">⚠️ Suplování a změny v rozvrhu</h3>
+        <div id="changesList" style="font-size: 13px; color: #475569;">
+          Načítám suplování...
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">📅 Export do kalendáře</h3>
+        <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 14px;">
+          Přeneste všechny hodiny přímo do svého mobilního kalendáře:
+        </p>
+        <button class="btn btn-primary" onclick="downloadIcs()" style="width: 100%; justify-content: center; margin-bottom: 8px;">
+          Stáhnout kalendář pro Apple / Google / Outlook (.ics)
+        </button>
+        <button class="btn" onclick="copyIcs()" style="width: 100%; justify-content: center;">
+          Kopírovat iCal do schránky
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const DATA = {
+      Hours: [
+        { Id: 1, Caption: '1', BeginTime: '08:00', EndTime: '08:45' },
+        { Id: 2, Caption: '2', BeginTime: '08:55', EndTime: '09:40' },
+        { Id: 3, Caption: '3', BeginTime: '10:00', EndTime: '10:45' },
+        { Id: 4, Caption: '4', BeginTime: '10:55', EndTime: '11:40' },
+        { Id: 5, Caption: '5', BeginTime: '11:50', EndTime: '12:35' },
+        { Id: 6, Caption: '6', BeginTime: '12:45', EndTime: '13:30' },
+        { Id: 7, Caption: '7', BeginTime: '13:35', EndTime: '14:20' },
+        { Id: 8, Caption: '8', BeginTime: '14:25', EndTime: '15:10' }
+      ],
+      Days: [
+        {
+          DayOfWeek: 1, DayDescription: 'Pondělí', date: '2026-09-28',
+          lessons: [
+            { period: 1, abbrev: 'MAT', name: 'Matematika', room: 'U12', teacher: 'Pr' },
+            { period: 2, abbrev: 'ČJL', name: 'Český jazyk', room: 'U12', teacher: 'Ku' },
+            { period: 3, abbrev: 'DP', name: 'Dopravní prostředky', room: 'U12', teacher: 'Ma' },
+            { period: 4, abbrev: 'DP', name: 'Dopravní prostředky', room: 'U12', teacher: 'Ma' },
+            { period: 5, abbrev: 'ANJ', name: 'Anglický jazyk', room: 'U04', teacher: 'Kr' }
+          ]
+        },
+        {
+          DayOfWeek: 2, DayDescription: 'Úterý', date: '2026-09-29',
+          lessons: [
+            { period: 1, abbrev: 'STR', name: 'Stavba strojů', room: 'U12', teacher: 'Vl' },
+            { period: 2, abbrev: 'MAT', name: 'Matematika', room: 'U12', teacher: 'Pr' },
+            { period: 3, abbrev: 'AUT', name: 'Autotronika', room: 'LAB-EL', teacher: 'Ho' },
+            { period: 4, abbrev: 'AUT', name: 'Autotronika', room: 'LAB-EL', teacher: 'Ho' }
+          ]
+        },
+        {
+          DayOfWeek: 3, DayDescription: 'Středa', date: '2026-09-30',
+          lessons: [
+            { period: 1, abbrev: 'ELE', name: 'Elektrotechnika', room: 'LAB-EL', teacher: 'Dv' },
+            { period: 2, abbrev: 'ELE', name: 'Elektrotechnika', room: 'LAB-EL', teacher: 'Dv' },
+            { period: 3, abbrev: 'ANJ', name: 'Anglický jazyk', room: 'U12', teacher: 'Kr', subst: 'Zástup za nemoc' },
+            { period: 4, abbrev: 'MAT', name: 'Matematika', room: 'U12', teacher: 'Pr' }
+          ]
+        },
+        {
+          DayOfWeek: 4, DayDescription: 'Čtvrtek', date: '2026-10-01',
+          lessons: [
+            { period: 1, abbrev: 'AUT', name: 'Autodílny a měření', room: 'DÍL-A', teacher: 'Ho' },
+            { period: 2, abbrev: 'AUT', name: 'Autodílny a měření', room: 'DÍL-A', teacher: 'Ho' },
+            { period: 3, abbrev: 'ČJL', name: 'Český jazyk', room: 'U12', teacher: 'Ku' },
+            { period: 5, abbrev: 'STR', name: 'Stavba strojů', room: 'U12', teacher: 'Vl', cancel: 'Odpadá: exkurze vyučujícího' }
+          ]
+        },
+        {
+          DayOfWeek: 5, DayDescription: 'Pátek', date: '2026-10-02',
+          lessons: [
+            { period: 1, abbrev: 'DP', name: 'Dopravní prostředky', room: 'U12', teacher: 'Ma' },
+            { period: 2, abbrev: 'ANJ', name: 'Anglický jazyk', room: 'LAB-PC', teacher: 'Kr', roomChange: 'Změna do LAB-PC2' },
+            { period: 3, abbrev: 'MAT', name: 'Matematika', room: 'U12', teacher: 'Pr' }
+          ]
+        }
+      ]
+    };
+
+    function render() {
+      const table = document.getElementById('timetable');
+      let html = '<thead><tr><th class="day-th">Den / Hodina</th>';
+      DATA.Hours.forEach(h => {
+        html += '<th>' + h.Caption + '.<br><span style="font-size:11px;font-weight:400;color:#64748b;">' + h.BeginTime + ' - ' + h.EndTime + '</span></th>';
+      });
+      html += '</tr></thead><tbody>';
+
+      let changesHtml = '';
+
+      DATA.Days.forEach(day => {
+        html += '<tr><td class="day-td">' + day.DayDescription + '<div style="font-size:11px;font-weight:400;color:#64748b;">' + day.date + '</div></td>';
+        DATA.Hours.forEach(h => {
+          const lessons = day.lessons.filter(l => l.period === h.Id);
+          html += '<td>';
+          lessons.forEach(l => {
+            const isCanceled = !!l.cancel;
+            const isSubst = !!l.subst;
+            const bgClass = isCanceled ? 'var(--cancel-bg)' : isSubst ? 'var(--subst-bg)' : '#fff';
+            const borderClass = isCanceled ? 'var(--cancel-border)' : isSubst ? 'var(--subst-border)' : 'var(--border)';
+
+            if (isCanceled || isSubst || l.roomChange) {
+              changesHtml += '<div style="padding:6px 0; border-bottom:1px solid #f1f5f9;"><strong>' + day.DayDescription + ' ' + l.period + '. h: ' + l.name + '</strong> — ' + (l.cancel || l.subst || l.roomChange) + '</div>';
+            }
+
+            html += '<div class="lesson-card" style="background:' + bgClass + '; border-color:' + borderClass + ';" onclick="openGoogleCal(\\'' + l.name + '\\', \\'' + l.room + '\\', \\'' + day.date + '\\', \\'' + h.BeginTime + '\\', \\'' + h.EndTime + '\\')">';
+            if (isCanceled) html += '<span class="badge-cancel">Odpadá</span> ';
+            else if (isSubst) html += '<span class="badge-subst">Supl.</span> ';
+            html += '<div style="display:flex; justify-content:space-between; font-weight:700;"><span style="' + (isCanceled ? 'text-decoration:line-through;color:#94a3b8;' : '') + '">' + l.abbrev + '</span><span style="font-family:monospace;font-size:11px;color:#64748b;">' + l.room + '</span></div>';
+            html += '<div style="font-size:11px;color:#475569;margin-top:2px;">' + l.name + '</div>';
+            html += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;">' + l.teacher + '</div>';
+            html += '</div>';
+          });
+          html += '</td>';
+        });
+        html += '</tr>';
+      });
+      html += '</tbody>';
+      table.innerHTML = html;
+      document.getElementById('changesList').innerHTML = changesHtml || 'Žádné změny.';
+    }
+
+    render();
+
+    function openGoogleCal(name, room, dateStr, start, end) {
+      const d = dateStr.replace(/-/g, '');
+      const s = start.replace(':', '');
+      const e = end.replace(':', '');
+      const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(name + ' (' + room + ')') + '&dates=' + d + 'T' + s + '00/' + d + 'T' + e + '00&location=' + encodeURIComponent('SPŠD Motol - ' + room);
+      window.open(url, '_blank');
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value;
+      const status = document.getElementById('status');
+      status.innerText = 'Přihlašuji...';
+      try {
+        const res = await fetch('/api/bakalari/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ username: u, password: p, serverUrl: 'https://mot-spsd.bakalari.cz' })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Chyba přihlášení');
+        status.innerHTML = '<span style="color:#059669;font-weight:700;">✓ Přihlášeno k účtu ' + u + '! Skutečný rozvrh stažen.</span>';
+      } catch (err) {
+        status.innerHTML = '<span style="color:#dc2626;">Chyba: ' + err.message + '</span>';
+      }
+    }
+
+    function downloadIcs() {
+      let lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//SPSD//CS', 'X-WR-CALNAME:Rozvrh SPSD Motol'];
+      DATA.Days.forEach(day => {
+        day.lessons.forEach(l => {
+          if (l.cancel) return;
+          const h = DATA.Hours.find(h => h.Id === l.period);
+          if (!h) return;
+          const d = day.date.replace(/-/g, '');
+          lines.push('BEGIN:VEVENT');
+          lines.push('SUMMARY:' + l.name + ' (' + l.room + ')');
+          lines.push('DTSTART;TZID=Europe/Prague:' + d + 'T' + h.BeginTime.replace(':', '') + '00');
+          lines.push('DTEND;TZID=Europe/Prague:' + d + 'T' + h.EndTime.replace(':', '') + '00');
+          lines.push('LOCATION:SPŠD Motol ' + l.room);
+          lines.push('END:VEVENT');
+        });
+      });
+      lines.push('END:VCALENDAR');
+      const blob = new Blob([lines.join('\\r\\n')], { type: 'text/calendar;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'Rozvrh_SPSD_Motol.ics';
+      a.click();
+    }
+
+    function copyIcs() {
+      downloadIcs();
+      alert('Soubor kalendáře byl stažen a je připraven k importu do Google Kalendáře.');
+    }
+
+    function saveThisHtml() {
+      const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'rozvrh-spsd-motol-samostatne.html';
+      a.click();
+    }
+  </script>
+</body>
+</html>

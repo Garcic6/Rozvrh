@@ -1,0 +1,6 @@
+{
+  "name": "Rozvrh SPŠD Motol & Kalendář",
+  "description": "Chytrý rozvrh hodin pro Střední průmyslovou školu dopravní v Motole s přímým napojením na Bakaláře a exportem do kalendáře.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
