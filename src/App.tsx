@@ -5,7 +5,6 @@ import {
   TimetableWeekData,
 } from './types/bakalari';
 import { BakalariService } from './services/bakalariService';
-import { REAL_STUDENT_USER } from './data/realSpsdData';
 import { Navbar } from './components/Navbar';
 import { CurrentLessonBanner } from './components/CurrentLessonBanner';
 import { TimetableControls } from './components/TimetableControls';
@@ -16,7 +15,6 @@ import { ExportModal } from './components/ExportModal';
 import { LoginModal } from './components/LoginModal';
 import { LessonDetailModal } from './components/LessonDetailModal';
 import { LoginScreen } from './components/LoginScreen';
-import { DiagnosticsModal } from './components/DiagnosticsModal';
 import { HtmlImportModal } from './components/HtmlImportModal';
 import { generateStandaloneHtml } from './services/standaloneHtmlGenerator';
 import {
@@ -29,7 +27,6 @@ import {
   ExternalLink,
   ShieldCheck,
   RefreshCw,
-  Terminal,
   FileCode,
   ClipboardPaste,
 } from 'lucide-react';
@@ -57,14 +54,13 @@ export default function App() {
 
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
   const [isLoginOpen, setIsLoginOpen] = useState<boolean>(false);
-  const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState<boolean>(false);
   const [isHtmlImportOpen, setIsHtmlImportOpen] = useState<boolean>(false);
   const [selectedLesson, setSelectedLesson] = useState<NormalizedLesson | null>(null);
 
   const [currentUser, setCurrentUser] = useState<BakalariUser | null>(() => {
-    return BakalariService.getStoredUser() || REAL_STUDENT_USER;
+    return BakalariService.isAuthenticated() ? BakalariService.getStoredUser() : null;
   });
-  const [isDemo, setIsDemo] = useState<boolean>(() => BakalariService.isDemoMode());
+  const [isDemo, setIsDemo] = useState<boolean>(() => !BakalariService.isAuthenticated() || BakalariService.isDemoMode());
 
   // Load timetable in background without wiping displayed content
   const loadTimetable = useCallback(async (date: Date, permanent: boolean, silent = false, classId?: string) => {
@@ -114,8 +110,8 @@ export default function App() {
   // Initial mount: authenticate check and silent background sync
   useEffect(() => {
     const isAuthed = BakalariService.isAuthenticated();
-    const demo = BakalariService.isDemoMode();
-    const user = BakalariService.getStoredUser() || REAL_STUDENT_USER;
+    const demo = !isAuthed || BakalariService.isDemoMode();
+    const user = isAuthed ? BakalariService.getStoredUser() : null;
     setCurrentUser(user);
     setIsDemo(demo);
 
@@ -256,8 +252,8 @@ export default function App() {
 
   const handleLogout = () => {
     BakalariService.logout();
-    setIsDemo(false);
-    setCurrentUser(REAL_STUDENT_USER);
+    setIsDemo(true);
+    setCurrentUser(null);
     setWeekData(BakalariService.getInstantTimetable(new Date(), false));
     setWeekMode('current');
   };
@@ -285,7 +281,6 @@ export default function App() {
         onOpenExport={() => setIsExportOpen(true)}
         onOpenLogin={() => setIsLoginOpen(true)}
         onDownloadHtml={handleDownloadStandaloneHtml}
-        onOpenDiagnostics={() => setIsDiagnosticsOpen(true)}
         onOpenHtmlImport={() => setIsHtmlImportOpen(true)}
         isDemo={isDemo}
         currentUser={currentUser}
@@ -426,13 +421,6 @@ export default function App() {
                     <span>Vložit HTML z webu (Ctrl+U)</span>
                   </button>
                   <button
-                    onClick={() => setIsDiagnosticsOpen(true)}
-                    className="px-2.5 py-1.5 bg-slate-900 text-white font-semibold rounded-lg hover:bg-slate-800 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs text-xs"
-                  >
-                    <Terminal className="w-3 h-3 text-blue-400" />
-                    <span>Diagnostika chyby</span>
-                  </button>
-                  <button
                     onClick={() => loadTimetable(currentDate, isPermanent)}
                     className="px-2.5 py-1.5 bg-white hover:bg-rose-100 text-rose-800 font-semibold rounded-lg border border-rose-200 cursor-pointer text-xs"
                   >
@@ -542,7 +530,6 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess}
         onUseDemo={handleUseDemo}
         isDemo={isDemo}
-        onOpenDiagnostics={() => setIsDiagnosticsOpen(true)}
       />
 
       <LessonDetailModal
@@ -552,15 +539,6 @@ export default function App() {
           if (weekData) {
             setWeekData({ ...weekData });
           }
-        }}
-      />
-
-      <DiagnosticsModal
-        isOpen={isDiagnosticsOpen}
-        onClose={() => setIsDiagnosticsOpen(false)}
-        onUseSampleStudent={() => {
-          const res = BakalariService.useSampleStudent();
-          handleLoginSuccess(res.user);
         }}
       />
 

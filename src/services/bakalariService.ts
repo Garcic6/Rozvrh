@@ -22,10 +22,14 @@ const LAST_SYNC_STORAGE_KEY = 'bakalari_last_sync_timestamp';
 export const DEFAULT_SCHOOL_URL = 'https://mot-spsd.bakalari.cz/bakaweb';
 
 export class BakalariService {
-  // Check if currently explicitly in demo mode
+  // Check if currently in demo mode (default is true if not authenticated)
   static isDemoMode(): boolean {
+    const token = this.getStoredToken();
+    if (!token?.access_token) {
+      return true;
+    }
     const val = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
-    return val === 'true'; // Defaults to false, so the real account is prioritized!
+    return val === 'true';
   }
 
   static setDemoMode(active: boolean): void {
@@ -100,7 +104,7 @@ export class BakalariService {
   static logout(): void {
     this.setStoredToken(null);
     this.setStoredUser(null);
-    this.setDemoMode(false);
+    this.setDemoMode(true);
     localStorage.removeItem(REAL_CACHE_STORAGE_KEY);
     localStorage.removeItem(LAST_SYNC_STORAGE_KEY);
     try {
@@ -370,6 +374,13 @@ export class BakalariService {
   // Synchronously retrieves timetable for 0ms instant render from cache or embedded real SPŠD dataset
   static getInstantTimetable(targetDate: Date, forcePermanent = false): TimetableWeekData {
     const dateStr = this.formatDateIso(targetDate);
+
+    // 0. If in demo mode (not logged in), return official demo timetable
+    if (this.isDemoMode()) {
+      const mockRaw = getMockSpsdTimetable(dateStr);
+      return this.normalizeBakalariTimetable(mockRaw, dateStr);
+    }
+
     const cacheKey = this.getCacheKey(dateStr, forcePermanent);
 
     // 1. Week-specific cache

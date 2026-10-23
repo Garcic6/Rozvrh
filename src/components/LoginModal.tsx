@@ -9,7 +9,6 @@ import {
   Loader2,
   Sparkles,
   School,
-  Terminal,
   Copy,
   Check,
 } from 'lucide-react';
@@ -23,7 +22,6 @@ interface LoginModalProps {
   onLoginSuccess: (user: BakalariUser) => void;
   onUseDemo: () => void;
   isDemo: boolean;
-  onOpenDiagnostics?: () => void;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
@@ -32,7 +30,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onLoginSuccess,
   onUseDemo,
   isDemo,
-  onOpenDiagnostics,
 }) => {
   const [serverUrl, setServerUrl] = useState<string>(DEFAULT_SCHOOL_URL);
   const [username, setUsername] = useState<string>('');
@@ -169,19 +166,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-rose-700" />}
                 <span>{copied ? 'Zkopírováno!' : 'Kopírovat protokol'}</span>
               </button>
-              {onOpenDiagnostics && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onOpenDiagnostics();
-                  }}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-800 hover:text-rose-950 underline cursor-pointer"
-                >
-                  <Terminal className="w-3 h-3" />
-                  <span>Zobrazit diagnostiku</span>
-                </button>
-              )}
             </div>
           </div>
         )}

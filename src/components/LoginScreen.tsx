@@ -11,7 +11,6 @@ import {
   ExternalLink,
   ShieldCheck,
   Calendar,
-  Terminal,
   Activity,
   Copy,
   Check,
@@ -23,7 +22,6 @@ import {
 import { BakalariService, DEFAULT_SCHOOL_URL } from '../services/bakalariService';
 import { BakalariUser, TimetableWeekData } from '../types/bakalari';
 import { DiagnosticsService } from '../services/diagnosticsService';
-import { DiagnosticsModal } from './DiagnosticsModal';
 
 interface LoginScreenProps {
   onLoginSuccess: (user: BakalariUser) => void;
@@ -48,7 +46,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [errorMessage, setErrorMessage] = useState<string>(initialErrorMessage || '');
   const [errorDetails, setErrorDetails] = useState<any>(null);
   const [showErrorRaw, setShowErrorRaw] = useState<boolean>(false);
-  const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState<boolean>(false);
   const [copiedError, setCopiedError] = useState<boolean>(false);
   const [serverStatus, setServerStatus] = useState<{ isReachable: boolean; version?: string } | null>(null);
 
@@ -192,16 +189,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   Ověřování serveru...
                 </span>
               )}
-
-              <button
-                type="button"
-                onClick={() => setIsDiagnosticsOpen(true)}
-                className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 rounded border border-slate-300 transition-colors cursor-pointer"
-                title="Zobrazit diagnostiku chyb a komunikace se serverem"
-              >
-                <Terminal className="w-3 h-3 text-blue-600" />
-                <span>Diagnostika</span>
-              </button>
             </div>
           </div>
 
@@ -258,15 +245,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
               {/* Troubleshooting action buttons */}
               <div className="pt-2 border-t border-rose-200/80 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsDiagnosticsOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-900 text-white font-semibold rounded-lg hover:bg-rose-950 transition-colors cursor-pointer text-xs shadow-2xs"
-                >
-                  <Terminal className="w-3.5 h-3.5" />
-                  <span>Zobrazit diagnostiku chyb</span>
-                </button>
-
                 <button
                   type="button"
                   onClick={handleCopyErrorReport}
@@ -448,34 +426,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           )}
 
           {/* Demo Mode Fallback Button */}
-          <div className="mt-8 pt-5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="mt-8 pt-5 border-t border-slate-100 flex items-center justify-center">
             <button
               type="button"
               onClick={onUseDemo}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 transition-colors cursor-pointer shadow-2xs"
             >
               <Sparkles className="w-3.5 h-3.5 text-blue-600" />
               <span>Spustit demo rozvrh (3.DP)</span>
             </button>
-
-            <button
-              type="button"
-              onClick={() => setIsDiagnosticsOpen(true)}
-              className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-            >
-              <Terminal className="w-3.5 h-3.5 text-slate-400" />
-              <span>Otevřít diagnostiku a logy</span>
-            </button>
           </div>
         </div>
       </div>
-
-      {/* Diagnostics and error log inspector modal */}
-      <DiagnosticsModal
-        isOpen={isDiagnosticsOpen}
-        onClose={() => setIsDiagnosticsOpen(false)}
-        onUseSampleStudent={handleUseSampleStudent}
-      />
     </>
   );
 };

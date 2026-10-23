@@ -8,7 +8,6 @@ import {
   Sparkles,
   RefreshCw,
   FileCode,
-  Terminal,
   ClipboardPaste,
 } from 'lucide-react';
 import { BakalariUser } from '../types/bakalari';
@@ -19,7 +18,6 @@ interface NavbarProps {
   onOpenExport: () => void;
   onOpenLogin: () => void;
   onDownloadHtml: () => void;
-  onOpenDiagnostics?: () => void;
   onOpenHtmlImport?: () => void;
   isDemo: boolean;
   currentUser: BakalariUser | null;
@@ -35,7 +33,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenExport,
   onOpenLogin,
   onDownloadHtml,
-  onOpenDiagnostics,
   onOpenHtmlImport,
   isDemo,
   currentUser,
@@ -106,17 +103,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 title="Synchronizovat s mot-spsd.bakalari.cz"
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-blue-600' : ''}`} />
-              </button>
-            )}
-
-            {onOpenDiagnostics && (
-              <button
-                onClick={onOpenDiagnostics}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
-                title="Diagnostika spojení a protokol chyb z Bakalářů"
-              >
-                <Terminal className="w-3.5 h-3.5 text-blue-600" />
-                <span className="hidden sm:inline">Diagnostika</span>
               </button>
             )}
 
